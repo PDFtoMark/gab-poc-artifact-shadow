@@ -1,0 +1,9 @@
+name: act
+description: run a shell script with the job's runtime token (mimics a build wrapper action)
+inputs:
+  script:
+    description: script to run
+    required: true
+runs:
+  using: node20
+  main: index.js
