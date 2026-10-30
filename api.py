@@ -40,8 +40,14 @@ def list_artifacts():
     return rpc('ListArtifacts', {'workflow_run_backend_id': WR, 'workflow_job_run_backend_id': JR})
 
 def create(name):
-    return rpc('CreateArtifact', {'workflow_run_backend_id': WR, 'workflow_job_run_backend_id': JR,
-                                  'name': name, 'mime_type': {'value': 'application/zip'}, 'version': 7})
+    body = {'workflow_run_backend_id': WR, 'workflow_job_run_backend_id': JR,
+            'name': name, 'mime_type': 'application/zip', 'version': 7}
+    r = rpc('CreateArtifact', body)
+    if not r.get('ok'):
+        # retry without mime_type (some backends reject the field shape)
+        body.pop('mime_type', None)
+        r = rpc('CreateArtifact', body)
+    return r
 
 def upload(url, path):
     r = subprocess.run(['curl', '-sS', '-o', '/dev/null', '-w', '%{http_code}', '-X', 'PUT', url,
@@ -53,7 +59,7 @@ def finalize(name, path):
     data = open(path, 'rb').read()
     h = hashlib.sha256(data).hexdigest()
     return rpc('FinalizeArtifact', {'workflow_run_backend_id': WR, 'workflow_job_run_backend_id': JR,
-                                    'name': name, 'size': str(len(data)), 'hash': {'value': 'sha256:' + h}})
+                                    'name': name, 'size': str(len(data)), 'hash': 'sha256:' + h})
 
 def delete(name):
     return rpc('DeleteArtifact', {'workflow_run_backend_id': WR, 'workflow_job_run_backend_id': JR, 'name': name})
