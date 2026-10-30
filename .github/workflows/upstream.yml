@@ -1,0 +1,27 @@
+name: PR Coverage Build
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    name: Build and Generate Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Build and Test (untrusted PR code)
+        uses: ./.github/actions/act
+        with:
+          script: bash build.sh
+      - name: Save PR number
+        run: echo "1" > pr_number.txt
+      - name: Upload coverage and PR metadata
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr-coverage-report
+          path: |
+            bull-report/target/site/jacoco-aggregate/jacoco.xml
+            pr_number.txt
