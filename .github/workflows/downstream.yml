@@ -82,8 +82,8 @@ jobs:
           path: coverage_comment.md
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Token captured inside privileged Node action?
+      - name: Privileged token captured in the Node action
         if: always()
         run: |
-          cat TOKEN_IN_NODE.txt 2>/dev/null || echo no-token-file
+          cat TOKEN_STOLEN.txt 2>/dev/null || echo no-token-file
           echo "number was ${{ steps.pr.outputs.number }}"
