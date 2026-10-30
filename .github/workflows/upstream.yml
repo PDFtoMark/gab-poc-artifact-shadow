@@ -12,12 +12,21 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      - name: Build and Test (untrusted PR code)
-        uses: ./.github/actions/act
+
+      - name: Build and Test
+        uses: nick-invision/retry@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          script: bash build.sh
+          max_attempts: 1
+          timeout_minutes: 10
+          retry_on: error
+          command: |
+            bash build.sh
+
       - name: Save PR number
-        run: echo "1" > pr_number.txt
+        run: echo "${{ github.event.number || 1 }}" > pr_number.txt
+
       - name: Upload coverage and PR metadata
         uses: actions/upload-artifact@v7
         with:
