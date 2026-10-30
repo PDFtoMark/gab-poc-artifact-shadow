@@ -1,0 +1,14 @@
+name: probe
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: artifact API probe
+        uses: ./.github/actions/act
+        with:
+          script: python3 api.py probe
